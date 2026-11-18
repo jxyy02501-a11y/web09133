@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f3eb">
+  <title>나만의 카페 경영 시뮬레이션</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #30271f;
+      --muted: #786d62;
+      --cream: #f7f3eb;
+      --paper: #fffefa;
+      --line: #e9e0d4;
+      --coffee: #765139;
+      --coffee-dark: #523a2b;
+      --green: #497b59;
+      --green-pale: #e8f1e8;
+      --red: #b65445;
+      --shadow: 0 18px 50px rgb(65 45 27 / 9%);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 28px 18px;
+      background:
+        radial-gradient(ellipse at 10% 0%, #fffdf5 0%, transparent 38%),
+        var(--cream);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+    }
+
+    button, input { font: inherit; }
+
+    .app {
+      width: min(100%, 1000px);
+      margin: 0 auto;
+    }
+
+    .hero {
+      margin-bottom: 22px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--coffee);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .16em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.65rem, 5vw, 2.35rem);
+      letter-spacing: -.045em;
+    }
+
+    .subtitle {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: .96rem;
+      line-height: 1.6;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(260px, .85fr) minmax(0, 1.45fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .settings, .results { padding: clamp(19px, 4vw, 28px); }
+
+    .section-heading {
+      margin: 0 0 6px;
+      font-size: 1.12rem;
+      letter-spacing: -.02em;
+    }
+
+    .section-note {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: .87rem;
+      line-height: 1.5;
+    }
+
+    .field { margin-bottom: 17px; }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: .9rem;
+      font-weight: 750;
+    }
+
+    .input-wrap { position: relative; }
+
+    input {
+      width: 100%;
+      min-height: 52px;
+      padding: 12px 50px 12px 14px;
+      border: 1px solid #dcd2c5;
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink);
+      font-size: 1rem;
+      font-weight: 700;
+      outline: none;
+      transition: border-color .15s, box-shadow .15s;
+    }
+
+    input:focus {
+      border-color: var(--coffee);
+      box-shadow: 0 0 0 3px rgb(118 81 57 / 14%);
+    }
+
+    input[aria-invalid="true"] { border-color: var(--red); }
+
+    .suffix {
+      position: absolute;
+      top: 50%;
+      right: 14px;
+      color: var(--muted);
+      font-size: .88rem;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .hint {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: .78rem;
+    }
+
+    .error {
+      min-height: 1.3em;
+      margin: 4px 0 0;
+      color: var(--red);
+      font-size: .82rem;
+      line-height: 1.4;
+    }
+
+    .reset-button {
+      width: 100%;
+      min-height: 48px;
+      margin-top: 3px;
+      border: 1px solid #d8c7b5;
+      border-radius: 12px;
+      background: #f5eee5;
+      color: var(--coffee-dark);
+      font-weight: 750;
+      cursor: pointer;
+      transition: background .15s, transform .12s;
+    }
+
+    .reset-button:hover { background: #eee2d4; }
+    .reset-button:active { transform: scale(.98); }
+    .reset-button:focus-visible { outline: 3px solid #b78d68; outline-offset: 2px; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin: 19px 0 23px;
+    }
+
+    .metric {
+      min-width: 0;
+      padding: 15px 13px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fffdf9;
+    }
+
+    .metric.profit {
+      border-color: #d9e8d9;
+      background: var(--green-pale);
+    }
+
+    .metric-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 700;
+    }
+
+    .metric-value {
+      display: block;
+      overflow-wrap: anywhere;
+      font-size: clamp(1rem, 2.7vw, 1.38rem);
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -.04em;
+    }
+
+    .metric.profit .metric-value { color: var(--green); }
+
+    .chart-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 0 0 8px;
+    }
+
+    .chart-heading h3 { margin: 0; font-size: 1rem; }
+
+    .chart-heading span {
+      color: var(--muted);
+      font-size: .77rem;
+    }
+
+    .chart-frame {
+      width: 100%;
+      overflow: hidden;
+      border: 1px solid #eee7dc;
+      border-radius: 14px;
+      background: #fffdf9;
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      font-family: inherit;
+    }
+
+    .chart-message {
+      min-height: 1.4em;
+      margin: 9px 0 0;
+      color: var(--muted);
+      font-size: .8rem;
+      line-height: 1.5;
+    }
+
+    .disclaimer {
+      margin: 17px 0 0;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #f5eee5;
+      color: #66594c;
+      font-size: .82rem;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 20px 14px; }
+      .layout { grid-template-columns: 1fr; }
+      .hero { margin-bottom: 18px; }
+      .settings, .results { padding: 21px; }
+      .field { margin-bottom: 15px; }
+      .metrics { gap: 8px; }
+      .metric { padding: 13px 10px; }
+    }
+
+    @media (max-width: 380px) {
+      body { padding: 14px 10px; }
+      .settings, .results { padding: 17px; }
+      .metrics { grid-template-columns: 1fr; }
+      .metric {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .metric-label { margin: 0; }
+      .metric-value { text-align: right; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="hero">
+      <p class="eyebrow">MY LITTLE CAFE</p>
+      <h1>나만의 카페 경영 시뮬레이션</h1>
+      <p class="subtitle">커피 가격과 판매량을 바꾸며 하루 운영 결과를 살펴보세요.</p>
+    </header>
+
+    <div class="layout">
+      <section class="card settings" aria-labelledby="settingsTitle">
+        <h2 class="section-heading" id="settingsTitle">운영 조건</h2>
+        <p class="section-note">원하는 값을 입력하면 결과에 바로 반영됩니다.</p>
+
+        <div class="field">
+          <label for="price">커피 한 잔 판매 가격</label>
+          <div class="input-wrap">
+            <input id="price" type="number" inputmode="decimal" min="0" step="1"
+              value="4000" aria-describedby="priceHint" required>
+            <span class="suffix">원</span>
+          </div>
+          <small class="hint" id="priceHint">한 잔을 판매하는 금액</small>
+        </div>
+
+        <div class="field">
+          <label for="cost">커피 한 잔 재료비</label>
+          <div class="input-wrap">
+            <input id="cost" type="number" inputmode="decimal" min="0" step="1"
+              value="1500" aria-describedby="costHint" required>
+            <span class="suffix">원</span>
+          </div>
+          <small class="hint" id="costHint">한 잔을 만드는 데 드는 재료비</small>
+        </div>
+
+        <div class="field">
+          <label for="quantity">하루 예상 판매량</label>
+          <div class="input-wrap">
+            <input id="quantity" type="number" inputmode="numeric" min="0" step="1"
+              value="50" aria-describedby="quantityHint" required>
+            <span class="suffix">잔</span>
+          </div>
+          <small class="hint" id="quantityHint">0 이상의 정수로 입력해 주세요.</small>
+        </div>
+
+        <p class="error" id="errorMessage" role="alert" aria-live="polite"></p>
+        <button class="reset-button" id="resetButton" type="button">기본값으로 되돌리기</button>
+      </section>
+
+      <section class="card results" aria-labelledby="resultsTitle">
+        <h2 class="section-heading" id="resultsTitle">하루 예상 결과</h2>
+        <p class="section-note">입력한 가격과 판매량을 기준으로 계산한 결과입니다.</p>
+
+        <div class="metrics" aria-live="polite" aria-atomic="true">
+          <div class="metric">
+            <span class="metric-label">예상 매출</span>
+            <strong class="metric-value" id="revenue">200,000원</strong>
+          </div>
+          <div class="metric">
+            <span class="metric-label">전체 재료비</span>
+            <strong class="metric-value" id="totalCost">75,000원</strong>
+          </div>
+          <div class="metric profit">
+            <span class="metric-label">재료비 제외 이익</span>
+            <strong class="metric-value" id="profit">125,000원</strong>
+          </div>
+        </div>
+
+        <div class="chart-heading">
+          <h3>매출과 재료비 제외 이익</h3>
+          <span>하루 기준 · 원</span>
+        </div>
+
+        <div class="chart-frame">
+          <svg id="chart" viewBox="0 0 640 300" role="img"
+            aria-label="예상 매출과 재료비 제외 이익 막대그래프">
+            <text x="320" y="150" text-anchor="middle" fill="#786d62" font-size="15">
+              계산 결과를 표시합니다
+            </text>
+          </svg>
+        </div>
+        <p class="chart-message" id="chartMessage" aria-live="polite"></p>
+
+        <p class="disclaimer">
+          안내: 이 시뮬레이션은 실제 매출을 예측하지 않습니다.
+          입력한 조건만으로 계산한 참고용 결과입니다.
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const fields = {
+        price: document.getElementById("price"),
+        cost: document.getElementById("cost"),
+        quantity: document.getElementById("quantity")
+      };
+      const revenueEl = document.getElementById("revenue");
+      const totalCostEl = document.getElementById("totalCost");
+      const profitEl = document.getElementById("profit");
+      const errorMessage = document.getElementById("errorMessage");
+      const chart = document.getElementById("chart");
+      const chartMessage = document.getElementById("chartMessage");
+      const resetButton = document.getElementById("resetButton");
+      const formatter = new Intl.NumberFormat("ko-KR", {
+        maximumFractionDigits: 0
+      });
+
+      function won(value) {
+        return `${formatter.format(value)}원`;
+      }
+
+      function clearChart(message) {
+        chart.innerHTML = `
+          <text x="320" y="150" text-anchor="middle" fill="#786d62" font-size="15">
+            ${message}
+          </text>`;
+      }
+
+      function drawChart(revenue, profit) {
+        const width = 640;
+        const top = 34;
+        const bottom = 226;
+        const values = [revenue, profit];
+        let minValue = Math.min(0, ...values);
+        let maxValue = Math.max(0, ...values);
+        const span = Math.max(maxValue - minValue, 1);
+        const padding = span * 0.12;
+        minValue -= padding;
+        maxValue += padding;
+
+        const y = value => top + (maxValue - value) / (maxValue - minValue) * (bottom - top);
+        const zeroY = y(0);
+        const bars = [
+          { label: "예상 매출", value: revenue, x: 172, color: "#9b704f" },
+          { label: "재료비 제외 이익", value: profit, x: 368, color: profit < 0 ? "#b65445" : "#5d8b67" }
+        ];
+        const barWidth = 100;
+
+        const barMarkup = bars.map(item => {
+          const valueY = y(item.value);
+          const rectY = Math.min(zeroY, valueY);
+          const rectHeight = Math.max(Math.abs(zeroY - valueY), 2);
+          const labelY = item.value >= 0
+            ? Math.max(valueY - 10, top + 13)
+            : Math.min(valueY + 22, bottom - 2);
+
+          return `
+            <rect x="${item.x}" y="${rectY}" width="${barWidth}" height="${rectHeight}"
+              rx="8" fill="${item.color}"></rect>
+            <text x="${item.x + barWidth / 2}" y="${labelY}" text-anchor="middle"
+              fill="#30271f" font-size="13" font-weight="750">${won(item.value)}</text>
+            <text x="${item.x + barWidth / 2}" y="268" text-anchor="middle"
+              fill="#66594c" font-size="14" font-weight="700">${item.label}</text>`;
+        }).join("");
+
+        chart.innerHTML = `
+          <line x1="74" y1="${zeroY}" x2="566" y2="${zeroY}"
+            stroke="#d9cfc2" stroke-width="1.5" stroke-dasharray="5 5"></line>
+          <text x="24" y="${top + 5}" fill="#8a7d70" font-size="11">
+            ${formatter.format(maxValue - padding)}
+          </text>
+          <text x="24" y="${bottom}" fill="#8a7d70" font-size="11">
+            ${formatter.format(minValue + padding)}
+          </text>
+          ${barMarkup}`;
+      }
+
+      function invalidate(message, invalidField) {
+        for (const input of Object.values(fields)) {
+          input.setAttribute("aria-invalid", input === invalidField ? "true" : "false");
+        }
+        errorMessage.textContent = message;
+        revenueEl.textContent = "—";
+        totalCostEl.textContent = "—";
+        profitEl.textContent = "—";
+        chartMessage.textContent = "";
+        clearChart("올바른 값을 입력하면 그래프가 표시됩니다");
+      }
+
+      function update() {
+        const values = {};
+        let invalidField = null;
+
+        for (const [name, input] of Object.entries(fields)) {
+          const raw = input.value.trim();
+          const value = Number(raw);
+
+          if (raw === "" || !Number.isFinite(value) || value < 0) {
+            invalidField = input;
+            invalidate("값을 비워 두지 말고 0 이상의 숫자를 입력해 주세요.", invalidField);
+            return;
+          }
+          values[name] = value;
+        }
+
+        if (!Number.isInteger(values.quantity)) {
+          invalidate("하루 예상 판매량은 0 이상의 정수로 입력해 주세요.", fields.quantity);
+          return;
+        }
+
+        const revenue = values.price * values.quantity;
+        const totalCost = values.cost * values.quantity;
+        const profit = revenue - totalCost;
+
+        if (![revenue, totalCost, profit].every(Number.isFinite)) {
+          invalidate("입력값이 너무 큽니다. 더 작은 숫자를 입력해 주세요.", null);
+          return;
+        }
+
+        for (const input of Object.values(fields)) {
+          input.setAttribute("aria-invalid", "false");
+        }
+        errorMessage.textContent = "";
+        revenueEl.textContent = won(revenue);
+        totalCostEl.textContent = won(totalCost);
+        profitEl.textContent = won(profit);
+        drawChart(revenue, profit);
+        chartMessage.textContent = profit < 0
+          ? "재료비가 매출보다 커서 재료비 제외 이익이 음수입니다."
+          : "이익은 매출에서 전체 재료비만 뺀 값이며, 기타 비용은 포함하지 않습니다.";
+      }
+
+      for (const input of Object.values(fields)) {
+        input.addEventListener("input", update);
+      }
+
+      resetButton.addEventListener("click", () => {
+        fields.price.value = "4000";
+        fields.cost.value = "1500";
+        fields.quantity.value = "50";
+        update();
+      });
+
+      update();
+    })();
+  </script>
+</body>
+</html>
